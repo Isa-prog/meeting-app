@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${votingSession.title} + ' - Results'">Results - Meetings App</title>
+    <style>
+        /* Стили оставляем без изменений */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .results-container { background: white; border-radius: 12px; padding: 2.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 100%; max-width: 700px; }
+        h1 { color: #2c3e50; margin-bottom: 0.5rem; font-size: 1.8rem; }
+        .poll-title { color: #7f8c8d; margin-bottom: 1.5rem; font-size: 1rem; }
+        .total-votes { background: #f8f9fa; padding: 1rem; border-radius: 8px; text-align: center; margin-bottom: 2rem; font-size: 1.1rem; color: #2c3e50; }
+        .total-votes strong { color: #667eea; font-size: 1.5rem; }
+        .results-list { list-style: none; }
+        .result-item { margin-bottom: 1.5rem; }
+        .option-name { color: #2c3e50; font-weight: 600; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .vote-count { color: #7f8c8d; font-size: 0.9rem; }
+        .progress-bar { background: #ecf0f1; border-radius: 8px; height: 40px; overflow: hidden; position: relative; }
+        .progress-fill { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100%; transition: width 0.6s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 1rem; }
+        .percentage { color: white; font-weight: 600; font-size: 0.95rem; }
+        .btn { display: block; width: 100%; padding: 1rem; background: #95a5a6; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 2rem; text-align: center; text-decoration: none; }
+        .btn:hover { background: #7f8c8d; transform: translateY(-2px); }
+        .status-badge { display: inline-block; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem; }
+        .status-open { background: #d4edda; color: #155724; }
+        .status-closed { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+<div class="results-container">
+    <h1 th:text="${votingSession.title}">Poll Question</h1>
+
+    <p class="poll-title" th:text="${votingSession.meeting.title}">Meeting Title</p>
+
+    <p class="poll-title" th:if="${votingSession.createdBy != null}" style="font-size: 0.85rem; margin-top: -0.5rem;">
+        Created by: <span th:text="${votingSession.createdBy.username}">username</span>
+    </p>
+
+    <span class="status-badge"
+          th:classappend="${votingSession.status == T(com.company.meetings.entities.VotingSession.Status).OPEN} ? 'status-open' : 'status-closed'"
+          th:text="${votingSession.status}">OPEN</span>
+
+    <div class="total-votes">
+        Total Votes: <strong th:text="${totalVotes}">0</strong>
+    </div>
+
+    <ul class="results-list">
+        <li th:each="option : ${votingSession.options}" class="result-item">
+            <div class="option-name">
+                <span th:text="${option.text}">Option</span>
+                <span class="vote-count"
+                      th:text="${results.containsKey(option.id) ? results.get(option.id) : 0} + ' votes'">
+                        0 votes
+                    </span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill"
+                     th:style="'width: ' + (${totalVotes > 0 ? ((results.containsKey(option.id) ? results.get(option.id) : 0) * 100.0 / totalVotes) : 0}) + '%'">
+                        <span class="percentage"
+                              th:if="${totalVotes > 0 and results.containsKey(option.id) and results.get(option.id) > 0}"
+                              th:text="${#numbers.formatDecimal(((results.get(option.id) * 100.0) / totalVotes), 1, 1)} + '%'">
+                            0%
+                        </span>
+                </div>
+            </div>
+        </li>
+    </ul>
+
+    <a th:href="@{'/meetings/' + ${votingSession.meeting.id}}" class="btn">
+        Back to Meeting
+    </a>
+</div>
+
+<script>
+    // Animate progress bars on load
+    window.addEventListener('load', function() {
+        document.querySelectorAll('.progress-fill').forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.width = width;
+            }, 100);
+        });
+    });
+</script>
+</body>
+</html>

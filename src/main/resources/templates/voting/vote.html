@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${votingSession.title} + ' - Vote'">Vote - Meetings App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .vote-container {
+            background: white;
+            border-radius: 12px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+        }
+
+        .poll-title {
+            color: #7f8c8d;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .options-list {
+            list-style: none;
+        }
+
+        .option-item {
+            margin-bottom: 1rem;
+        }
+
+        .option-label {
+            display: block;
+            padding: 1.2rem;
+            background: #f8f9fa;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .option-label:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        .option-radio {
+            margin-right: 0.8rem;
+        }
+
+        .option-text {
+            font-size: 1rem;
+            color: #2c3e50;
+        }
+
+        input[type="radio"]:checked + .option-label {
+            background: #e7f0ff;
+            border-color: #667eea;
+            font-weight: 600;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 1.5rem;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            margin-top: 1rem;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .status-open {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-closed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="vote-container">
+        <h1 th:text="${votingSession.title}">Poll Question</h1>
+        <p class="poll-title" th:text="${votingSession.meeting.title}">Meeting Title</p>
+
+        <span class="status-badge"
+              th:classappend="${votingSession.status == T(com.company.meetings.entities.VotingSession.Status).OPEN} ? 'status-open' : 'status-closed'"
+              th:text="${votingSession.status}">OPEN</span>
+
+        <div th:if="${hasVoted}" class="alert alert-info">
+            ✓ You have already voted in this poll. <a th:href="@{'/voting/' + ${votingSession.id} + '/results'}">View results</a>
+        </div>
+
+        <div th:if="${votingSession.status == T(com.company.meetings.entities.VotingSession.Status).CLOSED}"
+             class="alert alert-warning">
+            This poll is now closed. <a th:href="@{'/voting/' + ${votingSession.id} + '/results'}">View results</a>
+        </div>
+
+        <form th:if="${!hasVoted and votingSession.status == T(com.company.meetings.entities.VotingSession.Status).OPEN}"
+              th:action="@{'/voting/' + ${votingSession.id}}" method="post">
+            <ul class="options-list">
+                <li th:each="option : ${votingSession.options}" class="option-item">
+                    <input type="radio"
+                           th:id="'option-' + ${option.id}"
+                           name="optionId"
+                           th:value="${option.id}"
+                           required
+                           style="display: none;">
+                    <label th:for="'option-' + ${option.id}" class="option-label">
+                        <span class="option-radio">○</span>
+                        <span class="option-text" th:text="${option.text}">Option</span>
+                    </label>
+                </li>
+            </ul>
+
+            <button type="submit" class="btn">Submit Vote</button>
+        </form>
+
+        <a th:href="@{'/voting/' + ${votingSession.id} + '/results'}"
+           class="btn btn-secondary" style="display: block; text-align: center; text-decoration: none;">
+            View Results
+        </a>
+    </div>
+    
+    <script>
+        // Update radio button appearance
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.querySelectorAll('.option-radio').forEach(span => {
+                    span.textContent = '○';
+                });
+                if (this.checked) {
+                    const label = document.querySelector('label[for="' + this.id + '"]');
+                    const span = label.querySelector('.option-radio');
+                    span.textContent = '●';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
